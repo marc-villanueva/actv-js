@@ -132,9 +132,32 @@ window.ACTV = (function() {
     return this._attr('radius', radius);
   }
   ActivitiesSearch.prototype.from = function(value) {
+  	var d;
+	
+	if(typeof value == 'string') {
+		d = new Date(Date.parse(value));
+	} else if(typeof value == 'object') {
+		d = value;
+	}
+	
+	if(d) {
+		value = d.getUTCFullYear() + "-" + d.getUTCMonth() + 1 + "-" + d.getUTCDate();
+	}
     return this._attr('from', value);
   }
   ActivitiesSearch.prototype.to = function(value) {
+	var d;
+	
+	if(typeof value == 'string') {
+		d = new Date(Date.parse(value));
+	} else if(typeof value == 'object') {
+		d = value;
+	}
+	
+	if(d) {
+		value = d.getUTCFullYear() + "-" + d.getUTCMonth() + 1 + "-" + d.getUTCDate();
+	}
+	
     return this._attr('to', value);
   }
 
