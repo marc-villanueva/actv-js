@@ -21,6 +21,9 @@ window.ACTV = (function() {
     }, 
     articles: function(block) {
       return new ArticlesSearch(block);
+    }, 
+    popular: function(search) {
+      return new PopularSearch(search);
     }
   }
 
@@ -63,7 +66,7 @@ window.ACTV = (function() {
   }
   jQueryClient.prototype = {
     get: function(url) {
-      return $.get(url);
+      return $.getJSON(url);
     },
     post: function(url, data) {
       return $.post(url, data);
@@ -78,30 +81,42 @@ window.ACTV = (function() {
   function BaseSearch() {
     this._options = {};
     this._options['exclude_children'] = true;
+    this._options['endpoint'] = '/v2/search';
   }
   BaseSearch.prototype = {
-    keywords: function(value) {
-      return this._attr('keywords', value);
+    endpoint: function(value) {
+      return this._attr('endpoint', value);
+    },
+    url: function() {
+      return ACTV.configuration().host() + this.endpoint() + '?' + this.toParams();
+    },
+    query: function(value) {
+      return this._attr('query', value);
     },
     sort: function(sort) {
       return this._attr('sort', sort);
     },
     currentPage: function(currentPage) {
-      return this._attr('currentPage', currentPage);
+      return this._attr('current_page', currentPage);
     },
     perPage: function(perPage) {
-      return this._attr('perPage', perPage);
+      return this._attr('per_page', perPage);
     },
     search: function() {
+      return ACTV.configuration().client().get(this.url() + '&cb=?');
+    },
+    toParams: function() {
       var obj = {};
       $.extend(obj, this._options);
+     
+      delete obj.endpoint;
 
       if( this._options['from'] || this._options['to']) {
-        obj.startDate = this._options['from'] + '..' + this._options['to'];
+        obj.start_date = this._options['from'] + '..' + this._options['to'];
         delete obj.from;
         delete obj.to;
       }
-      console.log($.param(obj));
+      return $.param(obj);
     },
     _attr: function(property, value) {
       if(value) {
@@ -138,7 +153,6 @@ window.ACTV = (function() {
     return this._attr('to', value);
   }
 
-  
   /*
   * ArticlesSearch - provides searching
   * capabilites for articles in the Active directory
@@ -153,7 +167,34 @@ window.ACTV = (function() {
   }
   ArticlesSearch.prototype = new BaseSearch();
 
+  /*
+  * PopularSearch - provides search
+  * capabilities to the popular api
+  * endpoint
+  *
+  * 
+  */
+  function PopularSearch(search) {
+    this._search = search;
+    
+    this._endpoint = '/v2/events/popular';
+    
+    if(search instanceof ArticlesSearch) {
+      this._endpoint = '/v2/articles/popular';
+    }
+  }
+  PopularSearch.prototype = {
+    endpoint: function() {
+      return this._endpoint;
+    },
+    url: function() {
+      return ACTV.configuration().host() + this.endpoint() + '?' + this._search.toParams();
+    },
+    search: function() {
+      return ACTV.configuration().client().get(this.url() + '&cb=?');
+    }
+  }
 
-
-  return new actv();
+  var ACTV = new actv();
+  return ACTV;
 })();
