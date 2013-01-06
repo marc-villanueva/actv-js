@@ -12,7 +12,7 @@
     this.query('cycling');
     this.near('San Diego, CA');
     this.from('2012-12-01');
-    this.to('2012-12-31');
+    this.to(new Date(Date.parse('01/31/2013')));
   });
   console.log(activities.url());
   
