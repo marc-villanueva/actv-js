@@ -8,6 +8,8 @@
 <body>
 
 <script type="text/javascript">
+  ACTV.configuration().host('http://a3pistaging.active.com');
+  
   var activities = ACTV.activities(function() {
     this.query('cycling');
     this.near('San Diego, CA');
@@ -17,15 +19,13 @@
   console.log(activities.url());
   
   activities.search().done(function(data) {
-    console.log(data);
+    console.log(data.results);
   });
-
-  // JSONP is not enabled in the popular API currently
   
-  // var popularActivities = ACTV.popular(activities);
-  // popularActivities.search().done(function(data) {
-  //   console.log(data.results.length);
-  // })
+  var popularActivities = ACTV.popular(activities);
+  popularActivities.search().done(function(data) {
+    console.log(data.results);
+  });
 </script>
 
 </body>

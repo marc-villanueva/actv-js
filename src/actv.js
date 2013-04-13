@@ -1,5 +1,21 @@
 window.ACTV = (function() {
   /*
+  *  Helper functions
+  */
+  function createObject(parent) {
+    function TempClass() {}
+    TempClass.prototype = parent;
+    var child = new TempClass();
+    return child;
+  }
+
+  function inherit(child, parent) {
+	var newSubPrototype = createObject(parent.prototype); 
+    newSubPrototype.constructor = child; 
+    child.prototype = newSubPrototype;
+  };
+
+  /*
   * actv - main library object which provides
   * the DSL to interact with the API
   *
@@ -134,12 +150,14 @@ window.ACTV = (function() {
   * 
   */
   function ActivitiesSearch(block) {
+	BaseSearch.call(this);
     this._options['category'] = 'event';
 
     if(typeof block == 'function')
       block.call(this);
   }
-  ActivitiesSearch.prototype = new BaseSearch();
+  //ActivitiesSearch.prototype = new BaseSearch();
+  inherit(ActivitiesSearch, BaseSearch);
   ActivitiesSearch.prototype.near = function(location) {
     return this._attr('near', location);
   }
@@ -184,13 +202,14 @@ window.ACTV = (function() {
   * 
   */
   function ArticlesSearch(block) {
+	BaseSearch.call(this);
     this._options['category'] = 'articles';
 
     if(typeof block == 'function') 
       block.call(this);
   }
-  ArticlesSearch.prototype = new BaseSearch();
-
+  inherit(ArticlesSearch, BaseSearch);
+  
   /*
   * PopularSearch - provides search
   * capabilities to the popular api
