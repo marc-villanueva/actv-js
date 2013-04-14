@@ -1,31 +1,94 @@
 <html>
 <head>
   <script type="text/javascript" src="../lib/jquery.js"></script>
-  <script type="text/javascript" src="../src/actv.js"></script> 
-          
+  <script type="text/javascript" src="../src/actv.js"></script>           
 </head>
 
 <body>
+<p>View console to see output from examples.</p>
+
+<h1>Search</h1>
+<button type="button" id="activities-search-btn">Activities example</button>
+<button type="button" id="popular-search-btn">Popular Search example</button>
+
+<h1>Results</h1>
+<button type="button" id="results-search-btn">Search</button>
+<button type="button" id="results-event-btn">Event</button>
+<button type="button" id="results-sub-events-btn">Sub Events</button>
+<button type="button" id="results-sub-event-btn">Sub Event</button>
+<button type="button" id="results-participants-btn">Participants</button>
+<button type="button" id="results-participant-btn">Participant</button>
 
 <script type="text/javascript">
   ACTV.configuration().host('http://a3pistaging.active.com');
-  
-  var activities = ACTV.activities(function() {
-    this.query('cycling');
-    this.near('San Diego, CA');
-    this.from('2012-12-01');
-    this.to(new Date(Date.parse('01/31/2013')));
-  });
-  console.log(activities.url());
-  
-  activities.search().done(function(data) {
-    console.log(data.results);
-  });
-  
-  var popularActivities = ACTV.popular(activities);
-  popularActivities.search().done(function(data) {
-    console.log(data.results);
-  });
+    
+  $('#popular-search-btn').on('click', function(e) {
+    var activities = ACTV.activities(function() {
+      this.query('cycling');
+      this.near('San Diego, CA');
+      this.from('2012-12-01');
+      this.to(new Date(Date.parse('01/31/2013')));
+    });
+
+    var popularActivities = ACTV.popular(activities);
+    popularActivities.search().done(function(data) {
+      console.log(data.results);
+    });  
+  })
+
+  $('#activities-search-btn').on('click', function() {
+    var activities = ACTV.activities(function() {
+      this.query('cycling');
+      this.near('San Diego, CA');
+      this.from('2012-12-01');
+      this.to(new Date(Date.parse('01/31/2013')));
+    });
+    console.log(activities.url());
+    
+    activities.search().done(function(data) {
+      console.log(data.results);
+    });  
+  })
+
+  $('#results-search-btn').on('click', function(e) {
+    var results = ACTV.results().search(function() {
+      this.query('10k');
+    })
+
+    results.search().done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#results-event-btn').on('click', function(e) {
+    ACTV.results().event(344).done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#results-sub-events-btn').on('click', function(e) {
+    ACTV.results().subEvents(344).done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#results-sub-event-btn').on('click', function(e) {
+    ACTV.results().subEvent(344, 430).done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#results-participants-btn').on('click', function(e) {
+    ACTV.results().participants(344, 430).done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#results-participant-btn').on('click', function(e) {
+    ACTV.results().participant(344, 430, 27135194).done(function(data) {
+      console.log(data);
+    })
+  })
 </script>
 
 </body>

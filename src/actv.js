@@ -9,8 +9,8 @@ window.ACTV = (function() {
     return child;
   }
 
-  function inherit(child, parent) {
-	var newSubPrototype = createObject(parent.prototype); 
+  function inherit(child, parent) { 
+    var newSubPrototype = createObject(parent.prototype); 
     newSubPrototype.constructor = child; 
     child.prototype = newSubPrototype;
   };
@@ -23,6 +23,9 @@ window.ACTV = (function() {
   *
   * To set a different API endpoint than the default:
   *   actv.configuration().host('http://server.com');
+  *
+  * To set a differnt endpoint for Results:
+  *   actv.configuration().resultsHost('http://server.com');
   */
   function actv() {
     this._config = new Configuration();
@@ -40,6 +43,36 @@ window.ACTV = (function() {
     }, 
     popular: function(search) {
       return new PopularSearch(search);
+    },
+    results: function() {
+      return new Results();
+    }
+  }
+
+  /*
+  * Results - main DSL to interact with the 
+  * results.active.com v1 api.
+  */
+  function Results() {}
+
+  Results.prototype = {
+    search: function(block) {
+      return new ResultsSearch(block);
+    },
+    event: function(eventId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '?callback=?');
+    },
+    subEvents: function(eventId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events?callback=?');
+    },
+    subEvent: function(eventId, subEventId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '?callback=?');
+    },
+    participants: function(eventId, subEventId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants?callback=?');
+    },
+    participant: function(eventId, subEventId, participantId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants/' + participantId + '?callback=?');
     }
   }
 
@@ -50,8 +83,10 @@ window.ACTV = (function() {
   */
   function Configuration() {
     this._host = null;    
+    this._resultsHost = null;
     this._client = null;
   }
+
   Configuration.prototype = {
     host: function(value) {
       if(typeof value == 'undefined') {
@@ -64,6 +99,17 @@ window.ACTV = (function() {
         this._host = value;
       }
     }, 
+    resultsHost: function(value) {
+      if(typeof value == 'undefined') {
+        this._resultsHost = this._resultsHost ? this._resultsHost : 'http://results.active.com';
+        return this._resultsHost;
+      } else {
+        if(value[value.length - 1] == '/') {
+          value = value.substr(0, value.length - 1);
+        }
+        this._resultsHost = value;
+      }
+    },
     client: function(value) {
       if(typeof value == 'undefined') {
         this._client = this._client ? this._client : new jQueryClient();
@@ -89,16 +135,19 @@ window.ACTV = (function() {
     }
   }
 
+
  /*
   * BaseSearch - base class for
-  * the different types of searches
+  * the different types of  searches
   *
   */
   function BaseSearch() {
     this._options = {};
-    this._options['exclude_children'] = true;
+    
     this._options['endpoint'] = '/v2/search';
+    this._callbackParameter = 'cb';
   }
+
   BaseSearch.prototype = {
     endpoint: function(value) {
       return this._attr('endpoint', value);
@@ -119,7 +168,7 @@ window.ACTV = (function() {
       return this._attr('per_page', perPage);
     },
     search: function() {
-      return ACTV.configuration().client().get(this.url() + '&cb=?');
+      return ACTV.configuration().client().get(this.url() + '&' + this._callbackParameter + '=?');
     },
     toParams: function() {
       var obj = {};
@@ -143,6 +192,31 @@ window.ACTV = (function() {
     }
   }
 
+  /* 
+  * ResultsSearch - provides
+  * searching capabilities against
+  * the results.active.com AP
+  */
+  function ResultsSearch(block) {
+    this._options = {};
+    this._options['endpoint'] = '/api/v1/search';
+    this._callbackParameter = 'callback';
+
+    if(typeof block == 'function')
+      block.call(this);
+  }
+  inherit(ResultsSearch, BaseSearch);
+
+  ResultsSearch.prototype.url = function() {
+      return ACTV.configuration().resultsHost() + this.endpoint() + '?' + this.toParams();
+  }
+  ResultsSearch.prototype.sort = function(sort) {
+      return this._attr('sorting', sort);
+  }
+  ResultsSearch.prototype.currentPage = function(currentPage) {
+      return this._attr('page', sort); 
+  }
+
   /*
   * ActivitiesSearch - provides searching
   * capabilites for activites in the Active directory
@@ -150,14 +224,15 @@ window.ACTV = (function() {
   * 
   */
   function ActivitiesSearch(block) {
-	BaseSearch.call(this);
+	  BaseSearch.call(this);
     this._options['category'] = 'event';
+    this._options['exclude_children'] = true;
 
     if(typeof block == 'function')
       block.call(this);
   }
-  //ActivitiesSearch.prototype = new BaseSearch();
   inherit(ActivitiesSearch, BaseSearch);
+  
   ActivitiesSearch.prototype.near = function(location) {
     return this._attr('near', location);
   }
@@ -204,6 +279,7 @@ window.ACTV = (function() {
   function ArticlesSearch(block) {
 	BaseSearch.call(this);
     this._options['category'] = 'articles';
+    this._options['exclude_children'] = true;
 
     if(typeof block == 'function') 
       block.call(this);
@@ -215,7 +291,19 @@ window.ACTV = (function() {
   * capabilities to the popular api
   * endpoint
   *
-  * 
+  * Example usage:
+  *
+  * var activities = ACTV.activities(function() {
+  *   this.query('cycling');
+  *   this.near('San Diego, CA');
+  *   this.from('2012-12-01');
+  *   this.to(new Date(Date.parse('01/31/2013')));
+  * });
+  *
+  * var popularActivities = ACTV.popular(activities);
+  * popularActivities.search().done(function(data) {
+  *   console.log(data.results);
+  * }); 
   */
   function PopularSearch(search) {
     this._search = search;
@@ -226,6 +314,7 @@ window.ACTV = (function() {
       this._endpoint = '/v2/articles/popular';
     }
   }
+
   PopularSearch.prototype = {
     endpoint: function() {
       return this._endpoint;
