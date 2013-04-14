@@ -1,6 +1,6 @@
 # actvJS
 
-actvJS is a javascript client for the Active.com [V2 Search API](http://a3pi.active.com/v2/search).  
+actvJS is a javascript client for the Active.com [V2 Search API](http://a3pi.active.com/v2/search) and the [V1 Results API](http://results.active.com/api/v1).  
 
 The API is still in beta so there may be changes that break the javascript client.
 
