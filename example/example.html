@@ -14,10 +14,6 @@
 <h1>Results</h1>
 <button type="button" id="results-search-btn">Search</button>
 <button type="button" id="results-event-btn">Event</button>
-<button type="button" id="results-sub-events-btn">Sub Events</button>
-<button type="button" id="results-sub-event-btn">Sub Event</button>
-<button type="button" id="results-participants-btn">Participants</button>
-<button type="button" id="results-participant-btn">Participant</button>
 
 <script type="text/javascript">
   ACTV.configuration().host('http://a3pistaging.active.com');
@@ -62,31 +58,22 @@
 
   $('#results-event-btn').on('click', function(e) {
     ACTV.results().event(344).done(function(data) {
+      console.log("Event:");
       console.log(data);
-    })
-  })
 
-  $('#results-sub-events-btn').on('click', function(e) {
-    ACTV.results().subEvents(344).done(function(data) {
-      console.log(data);
-    })
-  })
+      console.log("SubEvents:");
+      $(data.subEvents).each(function() {
+        console.log(this);
 
-  $('#results-sub-event-btn').on('click', function(e) {
-    ACTV.results().subEvent(344, 430).done(function(data) {
-      console.log(data);
-    })
-  })
+        console.log("Participants");
+        this.participants().done(function(p) {
+          console.log(p);
+        })
+        this.participants(2).done(function(p) {
+          console.log(p);
+        })
+      })
 
-  $('#results-participants-btn').on('click', function(e) {
-    ACTV.results().participants(344, 430).done(function(data) {
-      console.log(data);
-    })
-  })
-
-  $('#results-participant-btn').on('click', function(e) {
-    ACTV.results().participant(344, 430, 27135194).done(function(data) {
-      console.log(data);
     })
   })
 </script>

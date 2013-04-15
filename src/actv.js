@@ -60,21 +60,50 @@ window.ACTV = (function() {
       return new ResultsSearch(block);
     },
     event: function(eventId) {
-      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '?callback=?');
-    },
-    subEvents: function(eventId) {
-      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events?callback=?');
-    },
-    subEvent: function(eventId, subEventId) {
-      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '?callback=?');
-    },
-    participants: function(eventId, subEventId) {
-      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants?callback=?');
-    },
-    participant: function(eventId, subEventId, participantId) {
-      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants/' + participantId + '?callback=?');
+      var dfd = $.Deferred();
+
+      $.when(ResultsClient.event(eventId), ResultsClient.subEvents(eventId)).done(function(eventData, subEventData) {
+        var e = eventData[0];
+        e.subEvents = subEventData[0];  
+
+        $(e.subEvents).each(function() {
+          this.participants = function(page, perPage) {
+            return ResultsClient.participants(e.id, this.id, page, perPage);
+          }
+        })
+
+        dfd.resolve(e);
+      })
+
+      return dfd;
     }
   }
+
+  /*
+  *  Client class to perform REST methods on the
+  *  results.active.com V1 API
+  */
+  var ResultsClient = (function() {
+    return {
+      event: function(eventId) {
+      return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '?callback=?');
+      },
+      subEvents: function(eventId) {
+        return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events?callback=?');
+      },
+      subEvent: function(eventId, subEventId) {
+        return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '?callback=?');
+      },
+      participants: function(eventId, subEventId, page, perPage) {
+        if(typeof page == 'undefined') page = 1;
+        if(typeof perPage == 'undefined') perPage = 10;
+        return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants?page=' + page + '&per_page=' + perPage + '&callback=?');
+      },
+      participant: function(eventId, subEventId, participantId) {
+        return ACTV.configuration().client().get(ACTV.configuration().resultsHost() + '/api/v1/events/' + eventId + '/sub_events/' + subEventId + '/participants/' + participantId + '?callback=?');
+      }
+    }
+  })();
 
   /*
   * Configuration
