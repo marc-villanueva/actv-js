@@ -41,7 +41,7 @@ Search for popular events near you:
 Search by asset Guid:
 
     var assets = ACTV.assets(function() {
-      this.findByIds('ec187ae9-5f84-4883-8316-b6d24e5e0597');
+      this.findById('ec187ae9-5f84-4883-8316-b6d24e5e0597');
     });
 
     assets.search().done(function(data) {
