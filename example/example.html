@@ -1,7 +1,7 @@
 <html>
 <head>
   <script type="text/javascript" src="../lib/jquery.js"></script>
-  <script type="text/javascript" src="../src/actv.js"></script>           
+  <script type="text/javascript" src="../src/actv.js"></script>
 </head>
 
 <body>
@@ -11,13 +11,17 @@
 <button type="button" id="activities-search-btn">Activities example</button>
 <button type="button" id="popular-search-btn">Popular Search example</button>
 
+<h1>Assets</h1>
+<button type="button" id="asset-id-btn">Asset Find By Id</button>
+<button type="button" id="asset-ids-btn">Asset Find By Ids</button>
+
 <h1>Results</h1>
 <button type="button" id="results-search-btn">Search</button>
 <button type="button" id="results-event-btn">Event</button>
 
 <script type="text/javascript">
   ACTV.configuration().host('http://a3pistaging.active.com');
-    
+
   $('#popular-search-btn').on('click', function(e) {
     var activities = ACTV.activities(function() {
       this.query('cycling');
@@ -29,7 +33,7 @@
     var popularActivities = ACTV.popular(activities);
     popularActivities.search().done(function(data) {
       console.log(data.results);
-    });  
+    });
   })
 
   $('#activities-search-btn').on('click', function() {
@@ -40,10 +44,32 @@
       this.to(new Date(Date.parse('01/31/2013')));
     });
     console.log(activities.url());
-    
+
     activities.search().done(function(data) {
       console.log(data.results);
-    });  
+    });
+  })
+
+  $('#asset-id-btn').on('click', function() {
+    var assets = ACTV.assets(function() {
+      this.findByIds('ec187ae9-5f84-4883-8316-b6d24e5e0597');
+    });
+    console.log(assets.url());
+
+    assets.search().done(function(data) {
+      console.log(data);
+    })
+  })
+
+  $('#asset-ids-btn').on('click', function() {
+    var assets = ACTV.assets(function() {
+      this.findByIds(['c055f67d-8727-4691-bc2e-8b439f3731c1','a3a8621f-8291-4d3f-b526-31debc548a33']);
+    });
+    console.log(assets.url());
+
+    assets.search().done(function(data) {
+      console.log(data);
+    })
   })
 
   $('#results-search-btn').on('click', function(e) {

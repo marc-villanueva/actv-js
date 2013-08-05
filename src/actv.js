@@ -9,9 +9,9 @@ window.ACTV = (function() {
     return child;
   }
 
-  function inherit(child, parent) { 
-    var newSubPrototype = createObject(parent.prototype); 
-    newSubPrototype.constructor = child; 
+  function inherit(child, parent) {
+    var newSubPrototype = createObject(parent.prototype);
+    newSubPrototype.constructor = child;
     child.prototype = newSubPrototype;
   };
 
@@ -35,12 +35,15 @@ window.ACTV = (function() {
     configuration: function() {
       return this._config;
     },
+    assets: function(block) {
+      return new Assets(block);
+    },
     activities: function(block) {
       return new ActivitiesSearch(block);
-    }, 
+    },
     articles: function(block) {
       return new ArticlesSearch(block);
-    }, 
+    },
     popular: function(search) {
       return new PopularSearch(search);
     },
@@ -50,7 +53,7 @@ window.ACTV = (function() {
   }
 
   /*
-  * Results - main DSL to interact with the 
+  * Results - main DSL to interact with the
   * results.active.com v1 api.
   */
   function Results() {}
@@ -64,7 +67,7 @@ window.ACTV = (function() {
 
       $.when(ResultsClient.event(eventId), ResultsClient.subEvents(eventId)).done(function(eventData, subEventData) {
         var e = eventData[0];
-        e.subEvents = subEventData[0];  
+        e.subEvents = subEventData[0];
 
         $(e.subEvents).each(function() {
           this.participants = function(page, perPage) {
@@ -107,11 +110,11 @@ window.ACTV = (function() {
 
   /*
   * Configuration
-  * 
+  *
   *
   */
   function Configuration() {
-    this._host = null;    
+    this._host = null;
     this._resultsHost = null;
     this._client = null;
   }
@@ -127,7 +130,7 @@ window.ACTV = (function() {
         }
         this._host = value;
       }
-    }, 
+    },
     resultsHost: function(value) {
       if(typeof value == 'undefined') {
         this._resultsHost = this._resultsHost ? this._resultsHost : 'http://results.active.com';
@@ -172,7 +175,7 @@ window.ACTV = (function() {
   */
   function BaseSearch() {
     this._options = {};
-    
+
     this._options['endpoint'] = '/v2/search';
     this._callbackParameter = 'cb';
   }
@@ -197,12 +200,14 @@ window.ACTV = (function() {
       return this._attr('per_page', perPage);
     },
     search: function() {
-      return ACTV.configuration().client().get(this.url() + '&' + this._callbackParameter + '=?');
+      var url = this.url();
+      var connector = url.indexOf('?') != -1 ? '&' : '?';
+      return ACTV.configuration().client().get(url + connector + this._callbackParameter + '=?');
     },
     toParams: function() {
       var obj = {};
       $.extend(obj, this._options);
-     
+
       delete obj.endpoint;
 
       if( this._options['from'] || this._options['to']) {
@@ -221,7 +226,51 @@ window.ACTV = (function() {
     }
   }
 
-  /* 
+  /*
+  * Assets - provides retrieval
+  * by an assetGuid or an array
+  * of assetGuids.
+  */
+  function Assets(block) {
+    this._options = {};
+    this._options['endpoint'] = '/v2/assets/';
+    this._callbackParameter = 'cb';
+
+    if(typeof block == 'function')
+      block.call(this);
+  }
+  inherit(Assets, BaseSearch);
+
+  Assets.prototype.url = function() {
+    return ACTV.configuration().host() + this.endpoint() + this._options['ids'];
+  }
+  Assets.prototype.findById = function(assetGuid) {
+    this._options['ids'] = assetGuid;
+  }
+  Assets.prototype.findByIds = function(assetGuids) {
+    var ids = assetGuids;
+    if(typeof assetGuids != "string") {
+      ids = assetGuids.join(',');
+    }
+    this._options['ids'] = ids;
+  }
+  Assets.prototype.search = function() {
+    var dfd = $.Deferred();
+
+    var timeout = setTimeout(function() {
+      dfd.resolve(null);
+    }, 2000);
+
+    var search = BaseSearch.prototype.search.call(this);
+    search.done(function(data) {
+      if(timeout) {
+        clearTimeout(timeout);
+        dfd.resolve(data);
+      }
+    });
+    return dfd;
+  }
+  /*
   * ResultsSearch - provides
   * searching capabilities against
   * the results.active.com AP
@@ -243,14 +292,14 @@ window.ACTV = (function() {
       return this._attr('sorting', sort);
   }
   ResultsSearch.prototype.currentPage = function(currentPage) {
-      return this._attr('page', sort); 
+      return this._attr('page', sort);
   }
 
   /*
   * ActivitiesSearch - provides searching
   * capabilites for activites in the Active directory
   *
-  * 
+  *
   */
   function ActivitiesSearch(block) {
 	  BaseSearch.call(this);
@@ -261,7 +310,7 @@ window.ACTV = (function() {
       block.call(this);
   }
   inherit(ActivitiesSearch, BaseSearch);
-  
+
   ActivitiesSearch.prototype.near = function(location) {
     return this._attr('near', location);
   }
@@ -270,13 +319,13 @@ window.ACTV = (function() {
   }
   ActivitiesSearch.prototype.from = function(value) {
     var d;
-  
+
     if(typeof value == 'string') {
       d = new Date(Date.parse(value));
     } else if(typeof value == 'object') {
       d = value;
     }
-    
+
     if(d) {
       value = d.getUTCFullYear() + "-" + (d.getUTCMonth() + 1) + "-" + d.getUTCDate();
     }
@@ -285,13 +334,13 @@ window.ACTV = (function() {
   }
   ActivitiesSearch.prototype.to = function(value) {
     var d;
-  
+
     if(typeof value == 'string') {
       d = new Date(Date.parse(value));
     } else if(typeof value == 'object') {
       d = value;
     }
-    
+
     if(d) {
       value = d.getUTCFullYear() + "-" + (d.getUTCMonth() + 1) + "-" + d.getUTCDate();
     }
@@ -303,18 +352,18 @@ window.ACTV = (function() {
   * ArticlesSearch - provides searching
   * capabilites for articles in the Active directory
   *
-  * 
+  *
   */
   function ArticlesSearch(block) {
 	BaseSearch.call(this);
     this._options['category'] = 'articles';
     this._options['exclude_children'] = true;
 
-    if(typeof block == 'function') 
+    if(typeof block == 'function')
       block.call(this);
   }
   inherit(ArticlesSearch, BaseSearch);
-  
+
   /*
   * PopularSearch - provides search
   * capabilities to the popular api
@@ -332,13 +381,13 @@ window.ACTV = (function() {
   * var popularActivities = ACTV.popular(activities);
   * popularActivities.search().done(function(data) {
   *   console.log(data.results);
-  * }); 
+  * });
   */
   function PopularSearch(search) {
     this._search = search;
-    
+
     this._endpoint = '/v2/events/popular';
-    
+
     if(search instanceof ArticlesSearch) {
       this._endpoint = '/v2/articles/popular';
     }
